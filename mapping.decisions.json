@@ -1,0 +1,81 @@
+{
+  "format_version": 1,
+  "status": "approved_for_simulation",
+  "approved": true,
+  "authorization": "read_only_simulation",
+  "expected_suggested_fields": 120,
+  "configuration": "config.toml",
+  "reviewed_schema": "generated/revision-3/schema.json",
+  "field_decisions": [
+    {
+      "airtable_field_id": "fldI7OigwrP0aZuzc",
+      "airtable_field_name": "Fabricant(s) BdR AC",
+      "grist_column_id": "Fabricant_s_BdR_AC",
+      "approved": true,
+      "conversion": "text",
+      "preserve_markdown": true
+    },
+    {
+      "airtable_field_id": "fldFP0ntCoqZprJBJ",
+      "airtable_field_name": "Fabricant(s) BdR DC<50 kW",
+      "grist_column_id": "Fabricant_s_BdR_DC_50_kW",
+      "approved": true,
+      "conversion": "text",
+      "preserve_markdown": true
+    },
+    {
+      "airtable_field_id": "fldGfbITYiPSMh9nW",
+      "airtable_field_name": "Fabricant(s) BdR DC=>50 kW",
+      "grist_column_id": "Fabricant_s_BdR_DC_50_kW2",
+      "approved": true,
+      "conversion": "text",
+      "preserve_markdown": true
+    },
+    {
+      "airtable_field_id": "fldQ4VPejHTIii9oc",
+      "airtable_field_name": "date_d'envoi_du_formulaire",
+      "grist_column_id": "date_d_envoi_du_formulaire",
+      "approved": true,
+      "conversion": "datetime",
+      "preserve_instant": true,
+      "naive_timezone": "Europe/Paris",
+      "change_grist_display_timezone": false
+    },
+    {
+      "airtable_field_id": "fldTdnpueuR4KhvXe",
+      "airtable_field_name": "AODE",
+      "grist_column_id": "AODE",
+      "approved": true,
+      "conversion": "reference_list",
+      "lookup": {
+        "grist_table_id": "AODE",
+        "grist_column_id": "Airtable_Id",
+        "on_missing_or_duplicate": "report_skip_and_retry",
+        "write_linked_table": false
+      }
+    }
+  ],
+  "removed_fields": [
+    "AODE 2",
+    "AODE 3"
+  ],
+  "other_suggested_fields": "approved",
+  "calculated_fields": {
+    "status": "reviewed",
+    "approved": true,
+    "write": false,
+    "preserve_existing_formulas": [
+      "Sigle",
+      "Panel",
+      "Siren",
+      "Type",
+      "Departement",
+      "Region"
+    ],
+    "exclude_without_modification": [
+      "AODE_Amenageur",
+      "Repondant",
+      "Declencheur_envoi"
+    ]
+  }
+}

@@ -1,0 +1,10 @@
+[airtable]
+base_id = "appLzJVf0KpaEishq"
+table_id = "tblfVBBQ18y1EE622"
+modified_field = "updatedat"
+
+[grist]
+server_url = "https://grist.francedatareseau.fr"
+document_id = "pZfzHcAQ9Gd3XYU1MFoGxP"
+table_id = "Enquete_2026"
+airtable_id_column = "Airtable_Id"

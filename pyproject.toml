@@ -1,0 +1,9 @@
+[project]
+name = "fdr-irve"
+version = "0.1.0"
+description = "Schema discovery and mapping for an Airtable to Grist n8n synchronization."
+requires-python = ">=3.11"
+dependencies = []
+
+[tool.uv]
+package = false
