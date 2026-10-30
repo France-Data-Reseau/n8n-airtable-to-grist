@@ -404,6 +404,18 @@ class WorkflowTests(unittest.TestCase):
                 for edge in output:
                     self.assertIn(edge["node"], names)
 
+    def test_code_nodes_never_reference_if_nodes(self):
+        # $('IF').first() resolves an arbitrary branch in n8n and may be empty.
+        for language in ("python", "javascript"):
+            _, workflow, _ = context_fixture(language)
+            branches = [node["name"] for node in workflow["nodes"] if node["type"] == "n8n-nodes-base.if"]
+            self.assertTrue(branches)
+            for node in workflow["nodes"]:
+                source = json.dumps(node["parameters"], ensure_ascii=False)
+                for name in branches:
+                    self.assertNotIn(f"$('{name}')", source, node["name"])
+                    self.assertNotIn(f'_("{name}")', source, node["name"])
+
     def test_export_command_is_offline_and_requires_explicit_overwrite(self):
         snapshot, proposal, decisions = fixture()
         decisions["reviewed_schema"] = "schema.json"

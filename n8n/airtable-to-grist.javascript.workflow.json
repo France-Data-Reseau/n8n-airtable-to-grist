@@ -722,7 +722,7 @@
       ],
       "parameters": {
         "mode": "runOnceForAllItems",
-        "jsCode": "const base = $('Plan').first().json;\nconst write_results = $('Operations ?').first().json.operations.length > 0\n  ? $('Assembler resultats').first().json.write_results : [];\nreturn [{json: {...base, write_results, verification_records: $input.first().json}}];"
+        "jsCode": "const base = $('Plan').first().json;\nconst write_results = base.operations.length > 0\n  ? $('Assembler resultats').first().json.write_results : [];\nreturn [{json: {...base, write_results, verification_records: $input.first().json}}];"
       }
     },
     {

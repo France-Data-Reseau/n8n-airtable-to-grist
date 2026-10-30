@@ -346,7 +346,7 @@ return [{json: {...$('Plan').first().json, write_results}}];
     )
     verification_bridge = js("Assembler verification", """
 const base = $('Plan').first().json;
-const write_results = $('Operations ?').first().json.operations.length > 0
+const write_results = base.operations.length > 0
   ? $('Assembler resultats').first().json.write_results : [];
 return [{json: {...base, write_results, verification_records: $input.first().json}}];
 """.strip())
