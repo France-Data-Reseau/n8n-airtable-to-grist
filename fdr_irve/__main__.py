@@ -34,18 +34,18 @@ def main(argv: list[str] | None = None) -> int:
     )
     simulation_command.add_argument("--config", type=Path, default=Path("config.toml"))
     simulation_command.add_argument(
-        "--proposal", type=Path, default=Path("generated/revision-3/mapping.proposed.json")
+        "--proposal", type=Path, default=Path("generated/revision-4/mapping.proposed.json")
     )
     simulation_command.add_argument("--decisions", type=Path, default=Path("mapping.decisions.json"))
     simulation_command.add_argument(
-        "--output-dir", type=Path, default=Path("generated/simulation-1")
+        "--output-dir", type=Path, default=Path("generated/simulation-2")
     )
     export_command = commands.add_parser(
         "export-n8n", help="Générer le workflow n8n sans effectuer d'appel API."
     )
     export_command.add_argument("--config", type=Path, default=Path("config.toml"))
     export_command.add_argument(
-        "--proposal", type=Path, default=Path("generated/revision-3/mapping.proposed.json")
+        "--proposal", type=Path, default=Path("generated/revision-4/mapping.proposed.json")
     )
     export_command.add_argument("--decisions", type=Path, default=Path("mapping.decisions.json"))
     export_command.add_argument("--output-dir", type=Path, default=Path("n8n"))

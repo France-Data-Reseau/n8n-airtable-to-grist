@@ -116,6 +116,10 @@ Après suppression de `AODE 2` et `AODE 3`, le schéma observé comporte 120
 correspondances simples, 9 colonnes Grist calculées, une référence `AODE`,
 un bouton sans cible et le champ technique `updatedat`.
 
+La révision 4 cible le document Grist `cK74vdT499GNpN2Gm2diUS`, de même
+structure. Seules les colonnes de données `AODE_2` et `AODE_3`, absentes
+d'Airtable, y subsistent : elles ne sont pas mappées et ne sont jamais écrites.
+
 Décisions confirmées :
 
 - conserver tel quel le Markdown des trois champs `Fabricant(s) BdR` ;
@@ -141,14 +145,14 @@ de données ni une modification de la structure Grist.
 ```sh
 uv run --env-file "$HOME/.config/fdr-irve/secrets.env" \
   python -m fdr_irve simulate \
-  --proposal generated/revision-3/mapping.proposed.json \
+  --proposal generated/revision-4/mapping.proposed.json \
   --decisions mapping.decisions.json \
-  --output-dir generated/simulation-1
+  --output-dir generated/simulation-2
 ```
 
 Le chemin du schéma examiné est dans `reviewed_schema` des décisions,
 relatif au dossier du fichier de décisions. Utiliser la proposition de la
-révision 3, pas la première proposition qui contient les anciennes colonnes.
+révision 4, pas une proposition antérieure qui cible l'ancien document.
 Chaque nouvelle exécution nécessite un dossier de sortie distinct.
 
 La simulation :
@@ -280,7 +284,7 @@ Dans le **même projet n8n** que le workflow, créer une Data Table, par exemple
 Créer exactement **une ligne**, avec :
 
 ```text
-sync_key = appLzJVf0KpaEishq:tblfVBBQ18y1EE622:pZfzHcAQ9Gd3XYU1MFoGxP:Enquete_2026
+sync_key = appLzJVf0KpaEishq:tblfVBBQ18y1EE622:cK74vdT499GNpN2Gm2diUS:Enquete_2026
 ```
 
 ```json

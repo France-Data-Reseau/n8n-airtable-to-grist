@@ -5,7 +5,7 @@
   "authorization": "read_only_simulation",
   "expected_suggested_fields": 120,
   "configuration": "config.toml",
-  "reviewed_schema": "generated/revision-3/schema.json",
+  "reviewed_schema": "generated/revision-4/schema.json",
   "field_decisions": [
     {
       "airtable_field_id": "fldI7OigwrP0aZuzc",
