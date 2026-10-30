@@ -46,7 +46,18 @@ def python_code(entry: str) -> str:
     return "\n\n".join(parts) + "\n"
 
 
-def build_workflow(mapping: dict[str, Any], schema: dict[str, Any]) -> dict[str, Any]:
+def javascript_code(entry: str) -> str:
+    if entry not in {"prepare", "validate_schema", "prepare_plan", "finalize", "summary"}:
+        raise DiscoveryError("Étape JavaScript n8n inconnue.")
+    source = (Path(__file__).parent / "n8n_runtime.js").read_text(encoding="utf-8")
+    return source + f"\nreturn [{{json: {entry}($input.first().json)}}];\n"
+
+
+def build_workflow(
+    mapping: dict[str, Any], schema: dict[str, Any], language: str = "python",
+) -> dict[str, Any]:
+    if language not in {"python", "javascript"}:
+        raise DiscoveryError("Langage de workflow inconnu.")
     if mapping.get("approved") is not True:
         raise DiscoveryError("Mapping approuvé requis pour l'export n8n.")
     lookups = {
@@ -100,7 +111,12 @@ def build_workflow(mapping: dict[str, Any], schema: dict[str, Any]) -> dict[str,
     def js(name: str, code: str) -> str:
         return node(name, "code", 2, {"mode": "runOnceForAllItems", "jsCode": code})
 
-    def py(name: str, entry: str) -> str:
+    def processing(name: str, entry: str) -> str:
+        if language == "javascript":
+            return node(name, "code", 2, {
+                "mode": "runOnceForAllItems", "language": "javaScript",
+                "jsCode": javascript_code(entry),
+            })
         return node(name, "code", 2, {
             "mode": "runOnceForAllItems", "language": "pythonNative", "pythonCode": python_code(entry),
         })
@@ -219,7 +235,7 @@ return [{{json: context}}];
         "return [{json: {config: $('Configuration').first().json,"
         " state_rows: $input.all().map(item => item.json)}}];"
     ))
-    prepare_node = py("Preparer execution", "prepare")
+    prepare_node = processing("Preparer execution", "prepare")
     airtable_base = "https://api.airtable.com/v0/" + mapping["source"]["base_id"]
     grist_base = (
         mapping["target"]["server_url"] + "/api/docs/" + mapping["target"]["document_id"]
@@ -246,7 +262,7 @@ return [{{json: context}}];
         f"target_schemas: {{...$('{target_bridge}').first().json.target_schemas, "
         "AODE: $input.first().json}",
     )
-    validate = py("Valider schemas", "validate_schema")
+    validate = processing("Valider schemas", "validate_schema")
     source_records = http(
         "Lire Airtable",
         "={{ (() => { const m = $json.config.mapping; "
@@ -285,7 +301,7 @@ return [{{json: context}}];
         "Assembler donnees", target_data_bridge,
         "linked_records: {AODE: $input.first().json}",
     )
-    plan_node = py("Plan", "prepare_plan")
+    plan_node = processing("Plan", "prepare_plan")
     dry_gate = condition("Simulation ?", "={{ $json.config.mode === 'simulation' }}")
     checkpoint = state_node("Checkpoint avant ecriture", "update", "={{ $json.checkpoint_payload }}")
     checkpoint_checked = saved_state(
@@ -334,10 +350,10 @@ const write_results = $('Operations ?').first().json.operations.length > 0
   ? $('Assembler resultats').first().json.write_results : [];
 return [{json: {...base, write_results, verification_records: $input.first().json}}];
 """.strip())
-    finalize_node = py("Finaliser etat", "finalize")
+    finalize_node = processing("Finaliser etat", "finalize")
     save_final = state_node("Sauver curseur et reprises", "update", "={{ $json.final_payload }}")
     final_checked = saved_state("Verifier etat final", finalize_node, "final_payload")
-    summary_node = py("Bilan", "summary")
+    summary_node = processing("Bilan", "summary")
     anomaly_gate = condition("Anomalies ?", "={{ $json.has_anomalies }}")
     stop = node("Signaler les anomalies", "stopAndError", 1, {
         "errorType": "errorMessage",
@@ -372,7 +388,11 @@ return [{json: {...base, write_results, verification_records: $input.first().jso
     connect(anomaly_gate, stop, 0)
     connect(anomaly_gate, success, 1)
     return {
-        "name": "IRVE - Airtable vers Grist (simulation par defaut)",
+        "name": (
+            "IRVE - Airtable vers Grist (JavaScript, simulation par defaut)"
+            if language == "javascript"
+            else "IRVE - Airtable vers Grist (simulation par defaut)"
+        ),
         "active": False,
         "nodes": nodes,
         "connections": connections,

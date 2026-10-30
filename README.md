@@ -210,19 +210,43 @@ encore persistée dans n8n.
 
 ## Étape 3 : workflow n8n importable
 
-Fichier à importer : [n8n/airtable-to-grist.workflow.json](./n8n/airtable-to-grist.workflow.json).
-Il embarque le mapping validé, le contrat de schéma et les mêmes conversions
-et comparaisons que la simulation locale. Il n'embarque **aucun token ni
-enregistrement métier**.
+**Version JavaScript, sans Python dans n8n** :
+[n8n/airtable-to-grist.javascript.workflow.json](./n8n/airtable-to-grist.javascript.workflow.json).
+Elle ne nécessite aucun module npm, aucune autorisation d'import et aucun
+runner Python. Les dates sans fuseau utilisent `Intl` et les données IANA du
+runtime JavaScript pour `Europe/Paris` ; les heures ambiguës ou inexistantes
+aux changements d'heure sont rejetées.
+
+L'ancienne [version Python](./n8n/airtable-to-grist.workflow.json) reste disponible.
+Les deux versions embarquent le même mapping validé et les mêmes garde-fous,
+sans **aucun token ni enregistrement métier**. Les nombres sont conservés sans
+conversion d'unité ; JavaScript rejette explicitement les entiers hors de sa
+précision sûre (au-delà de `Number.MAX_SAFE_INTEGER`), plutôt que de les écrire.
 
 Le workflow est **désactivé**, en mode `simulation`, avec un déclencheur
 manuel et un déclencheur toutes les 30 minutes (`Europe/Paris`).
 La simulation n'écrit ni dans Grist ni dans la Data Table.
-Le code Python natif utilise uniquement `_items` ; les quelques nœuds
-JavaScript assemblent les sorties des nœuds précédents. Tous les appels
-réseau passent par les nœuds HTTP Request.
+Dans la version JavaScript, tous les nœuds Code utilisent JavaScript et
+`$input`. Dans la version Python, le Python natif utilise uniquement `_items`
+et quelques nœuds JavaScript assemblent les sorties des nœuds précédents.
+Tous les appels réseau passent par les nœuds HTTP Request.
 
-### 1. Préparer le runner Python
+### 1. Choisir la version
+
+**Sans Python sur l'instance : importer la version JavaScript et passer
+directement à l'étape 2.** Le JavaScript des nœuds Code doit être autorisé
+sur l'instance n8n ; aucune configuration Python n'est nécessaire.
+Les commandes `uv run python ...` de ce dépôt s'exécutent uniquement en
+local pour découvrir les schémas ou régénérer les exports.
+
+Les étapes 2 à 5 s'appliquent aux deux versions. Si un workflow a déjà été
+importé, le désactiver avant d'importer l'autre version et ne jamais activer
+les deux en même temps. Renseigner à nouveau les credentials et le
+`state_table_id`. À mapping identique, la clé et l'empreinte d'état sont
+identiques entre les versions : conserver la Data Table et ses reprises.
+Ne pas réinitialiser un état existant pour changer de langage.
+
+#### Uniquement pour la version Python
 
 Le workflow cible les nœuds standards n8n 2.x : Code v2 (`pythonNative`),
 HTTP Request v4.2, Data Table v1, IF v2.2 et Schedule Trigger v1.2.
@@ -395,6 +419,12 @@ Le mapping et les métadonnées des champs sont embarqués dans le workflow.
 Toute nouvelle revue nécessite un nouvel export :
 
 ```sh
+uv run python -m fdr_irve export-n8n --language javascript --output-dir n8n --overwrite
+```
+
+Pour régénérer uniquement l'ancienne version Python :
+
+```sh
 uv run python -m fdr_irve export-n8n --output-dir n8n --overwrite
 ```
 
@@ -406,15 +436,18 @@ Une empreinte différente de mapping bloque l'ancien état : arrêter les
 exécutions, traiter/conserver les reprises, puis préparer explicitement un
 nouveau passage complet. Ne pas effacer l'état d'une exécution en cours.
 
-**Validation disponible dans ce dépôt :** tests des étapes Python embarquées,
-des expressions JavaScript et du graphe avec HTTP/Data Tables simulés
+**Validation disponible dans ce dépôt :** tests des étapes Python et JavaScript,
+comparaisons des conversions et résultats entre langages (notamment dates,
+pourcentages, listes et références), tests des expressions et du graphe
+dans les deux versions avec HTTP/Data Tables simulés
 (échecs partiels, vérification, interruption et reprise). L'import et l'exécution
 dans votre instance n8n restent à vérifier ; aucun accès administrateur n8n
 n'a été fourni et aucun workflow distant n'a été publié.
 
 ## Règles de synchronisation
 
-- n8n auto-hébergé ; nœuds HTTP Request et préférence pour Python dans les nœuds Code.
+- n8n auto-hébergé ; HTTP Request et nœuds Code JavaScript sans runner Python
+  requis. Une variante Python reste disponible.
 - Une paire de tables, toutes les 30 minutes, fuseau `Europe/Paris`.
 - Simulation sans écriture, validation, premier passage complet, puis incrémental
   via `updatedat`.

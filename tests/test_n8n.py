@@ -47,10 +47,10 @@ def execute_js(source, items, outputs=None, expression=False) -> Any:
     return json.loads(process.stdout)
 
 
-def context_fixture():
+def context_fixture(language="python"):
     schema, proposal, decisions = fixture()
     mapping = compile_mapping(CONFIG, schema, proposal, decisions)
-    workflow = build_workflow(mapping, schema)
+    workflow = build_workflow(mapping, schema, language=language)
     config = settings(workflow)
     state = {"version": 1, "cursor": None, "retry_ids": [], "mapping_fingerprint": ""}
     context = {
@@ -253,8 +253,8 @@ class RuntimeTests(unittest.TestCase):
 class WorkflowHarness:
     """Execute the actual generated graph with synthetic HTTP/Data Table responses."""
 
-    def __init__(self, mode="simulation"):
-        self.schema, self.workflow, context = context_fixture()
+    def __init__(self, mode="simulation", language="python"):
+        self.schema, self.workflow, context = context_fixture(language=language)
         self.state = copy.deepcopy(context["state_rows"][0])
         config = context["config"]
         config.update(
@@ -379,6 +379,9 @@ class WorkflowHarness:
 
 
 class WorkflowTests(unittest.TestCase):
+    def harness(self, mode="simulation"):
+        return WorkflowHarness(mode)
+
     def test_export_is_inactive_has_no_credentials_or_delete_and_is_deterministic(self):
         schema, workflow, _ = context_fixture()
         self.assertFalse(workflow["active"])
@@ -437,7 +440,7 @@ class WorkflowTests(unittest.TestCase):
             execute_js(config["parameters"]["jsCode"], [{"json": {}}])
 
     def test_simulation_graph_never_writes_data_or_state(self):
-        harness = WorkflowHarness()
+        harness = self.harness()
         before = copy.deepcopy(harness.target)
         result = harness.run()
         self.assertEqual(result["summary"]["updates"], 1)
@@ -447,7 +450,7 @@ class WorkflowTests(unittest.TestCase):
         self.assertEqual(harness.target, before)
 
     def test_write_graph_checkpoints_verifies_and_advances_cursor(self):
-        harness = WorkflowHarness("write")
+        harness = self.harness("write")
         harness.source.append(airtable_record("recOther", fldName="created"))
         result = harness.run()
         self.assertEqual(result["summary"]["verified_writes"], 2)
@@ -459,7 +462,7 @@ class WorkflowTests(unittest.TestCase):
         self.assertFalse(harness.error)
 
     def test_empty_incremental_run_still_commits_cursor(self):
-        harness = WorkflowHarness("write")
+        harness = self.harness("write")
         harness.source = []
         result = harness.run()
         self.assertEqual(harness.puts, [])
@@ -468,7 +471,7 @@ class WorkflowTests(unittest.TestCase):
         self.assertTrue(json.loads(harness.state["payload"])["cursor"])
 
     def test_partial_http_failure_is_persisted_and_signaled_then_retried(self):
-        harness = WorkflowHarness("write")
+        harness = self.harness("write")
         harness.source.append(airtable_record("recOther", fldName="created"))
         harness.fail_keys = {"recOne"}
         first = harness.run()
@@ -487,7 +490,7 @@ class WorkflowTests(unittest.TestCase):
         self.assertEqual(json.loads(harness.state["payload"])["retry_ids"], [])
 
     def test_interruption_after_creation_replays_without_duplicate(self):
-        harness = WorkflowHarness("write")
+        harness = self.harness("write")
         harness.target = []
         harness.interrupt_after_write = True
         with self.assertRaisesRegex(RuntimeError, "interruption"):
@@ -502,7 +505,7 @@ class WorkflowTests(unittest.TestCase):
         self.assertEqual(json.loads(harness.state["payload"])["retry_ids"], [])
 
     def test_checkpoint_failure_prevents_all_grist_writes(self):
-        harness = WorkflowHarness("write")
+        harness = self.harness("write")
         harness.checkpoint_failure = True
         with self.assertRaisesRegex(RuntimeError, "storage"):
             harness.run()

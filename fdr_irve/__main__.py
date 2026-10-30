@@ -50,12 +50,19 @@ def main(argv: list[str] | None = None) -> int:
     export_command.add_argument("--decisions", type=Path, default=Path("mapping.decisions.json"))
     export_command.add_argument("--output-dir", type=Path, default=Path("n8n"))
     export_command.add_argument(
+        "--language", choices=("python", "javascript"), default="python",
+        help="Langage des nœuds de traitement dans n8n."
+    )
+    export_command.add_argument(
         "--overwrite", action="store_true", help="Remplacer uniquement le workflow généré existant."
     )
     args = parser.parse_args(argv)
     names = (
         ("schema.json", "mapping.proposed.json") if args.command == "discover"
-        else ("airtable-to-grist.workflow.json",) if args.command == "export-n8n"
+        else (
+            ("airtable-to-grist.javascript.workflow.json",)
+            if args.language == "javascript" else ("airtable-to-grist.workflow.json",)
+        ) if args.command == "export-n8n"
         else ("mapping.approved.json", "simulation.json")
     )
     paths = [args.output_dir / name for name in names]
@@ -81,7 +88,7 @@ def main(argv: list[str] | None = None) -> int:
             schema = load_json(args.decisions.parent / schema_path)
             if args.command == "export-n8n":
                 mapping = compile_mapping(config, schema, proposal, decisions)
-                payloads = (build_workflow(mapping, schema),)
+                payloads = (build_workflow(mapping, schema, language=args.language),)
             else:
                 mapping, report = simulate(config, schema, proposal, decisions)
                 payloads = (mapping, report)
